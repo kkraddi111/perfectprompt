@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PROMPT_CATEGORIES, SUPPORTED_MODELS } from '../constants';
 import { getEnhancementSuggestions, applyEnhancements } from '../services/geminiService';
-import type { EnhancedPromptResponse } from '../types';
+import type { EnhancedPromptResponse, Suggestion } from '../types';
 
 import Card from './ui/Card';
 import PromptForm from './PromptForm';
@@ -23,7 +23,7 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
     const [model, setModel] = useState(SUPPORTED_MODELS[0]);
     const [error, setError] = useState<string | null>(null);
     const [enhancementStep, setEnhancementStep] = useState<EnhancementStep>('form');
-    const [suggestions, setSuggestions] = useState<string[]>([]);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [selectedChanges, setSelectedChanges] = useState<string[]>([]);
 
     useEffect(() => {
@@ -57,7 +57,8 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
         try {
             const suggestionsResult = await getEnhancementSuggestions(currentPrompt, currentCategory, currentModel);
             setSuggestions(suggestionsResult);
-            setSelectedChanges(suggestionsResult); // Pre-select all suggestions
+            // Pre-select all suggestions by extracting their text
+            setSelectedChanges(suggestionsResult.map(s => s.suggestion));
             setEnhancementStep('reviewing');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
@@ -118,7 +119,8 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
                         isLoading={enhancementStep === 'suggesting'}
                         isEditingDisabled={isReviewing || isLoading}
                     />
-                    {isReviewing && (
+                    {/* FIX: Keep SuggestionsView mounted during the 'applying' state to show the loading indicator. This resolves the reported comparison error which was caused by an incorrect state transition. */}
+                    {(enhancementStep === 'reviewing' || enhancementStep === 'applying') && (
                         <SuggestionsView 
                             suggestions={suggestions}
                             selectedChanges={selectedChanges}

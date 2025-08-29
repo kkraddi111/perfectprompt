@@ -13,6 +13,17 @@ export interface EnhancedPromptResponse {
     changes: string[];
 }
 
+export interface Suggestion {
+  technique: string;
+  suggestion: string;
+}
+
+export interface PromptingTechnique {
+  name: string;
+  description: string;
+  example: string;
+}
+
 export interface PromptTemplate {
   title: string;
   description: string;
@@ -22,4 +33,10 @@ export interface PromptTemplate {
 export interface PromptTemplateCategory {
   category: string;
   templates: PromptTemplate[];
+}
+
+// FIX: Add missing ABTestResult type.
+export interface ABTestResult {
+    a: string;
+    b: string | null;
 }

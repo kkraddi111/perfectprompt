@@ -1,5 +1,5 @@
-import { GoogleGenAI, Type, GenerateContentRequest } from "@google/genai";
-import type { EnhancedPromptResponse } from '../types';
+import { GoogleGenAI, Type, GenerateContentParameters } from "@google/genai";
+import type { EnhancedPromptResponse, Suggestion } from '../types';
 
 if (!process.env.API_KEY) {
   console.warn("API_KEY environment variable not set. Using a placeholder. Functionality will be limited.");
@@ -9,7 +9,8 @@ if (!process.env.API_KEY) {
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Internal helper to centralize API calls, error handling, and JSON parsing
-const _handleApiCall = async <T>(request: GenerateContentRequest, caller: string): Promise<T> => {
+// FIX: Use GenerateContentParameters instead of the deprecated GenerateContentRequest.
+const _handleApiCall = async <T>(request: GenerateContentParameters, caller: string): Promise<T> => {
     if (process.env.API_KEY === "MISSING_API_KEY") {
         throw new Error("Gemini API key is not configured.");
     }
@@ -28,8 +29,21 @@ const suggestionsSchema = {
     properties: {
         suggestions: {
             type: Type.ARRAY,
-            description: "A list of 3-5 high-impact, actionable suggestions to improve the prompt. Each suggestion should be a concise sentence.",
-            items: { type: Type.STRING }
+            description: "A list of 3-5 high-impact, actionable suggestions to improve the prompt.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    technique: {
+                        type: Type.STRING,
+                        description: "The name of the prompting technique used. Must be one of: Role Prompting, Add Context, Few-Shot Prompting, Add Constraints, Specify Format, Chain-of-Thought."
+                    },
+                    suggestion: {
+                        type: Type.STRING,
+                        description: "The concise, actionable suggestion to improve the prompt."
+                    }
+                },
+                required: ['technique', 'suggestion']
+            }
         }
     },
     required: ['suggestions']
@@ -69,11 +83,19 @@ const getModelSpecificInstructions = (model: string): string => {
     }
 };
 
-export const getEnhancementSuggestions = async (originalPrompt: string, category: string, model: string): Promise<string[]> => {
+export const getEnhancementSuggestions = async (originalPrompt: string, category: string, model: string): Promise<Suggestion[]> => {
     const modelInstructions = getModelSpecificInstructions(model);
     const request = {
         model: "gemini-2.5-flash",
-        contents: `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 concise, actionable improvements.
+        contents: `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 objects. Each object must have two keys: "technique" and "suggestion".
+
+**Prompting Techniques to use:**
+- Role Prompting
+- Add Context
+- Few-Shot Prompting
+- Add Constraints
+- Specify Format
+- Chain-of-Thought
 
 Target Model: ${model}
 Category: "${category}"
@@ -84,7 +106,7 @@ Original Prompt:
 ${originalPrompt}
 ---
 
-Focus on proven techniques: Context, Formatting, Role Assignment, Clarity, Constraints, and Examples.
+Focus on proven techniques. Each suggestion must be concise and actionable.
 
 Return ONLY the raw JSON object.`,
         config: {
@@ -94,7 +116,7 @@ Return ONLY the raw JSON object.`,
         }
     };
     
-    const response = await _handleApiCall<{ suggestions: string[] }>(request, "get suggestions");
+    const response = await _handleApiCall<{ suggestions: Suggestion[] }>(request, "get suggestions");
     if (!Array.isArray(response.suggestions)) {
         throw new Error("Invalid JSON structure received for suggestions.");
     }
