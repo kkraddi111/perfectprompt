@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PromptHistoryItem } from '../types';
 import TrashIcon from './icons/TrashIcon';
+import Card from './ui/Card';
 
 interface HistoryPanelProps {
     history: PromptHistoryItem[];
@@ -27,7 +28,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onLoad, onDelete }
     };
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6 border border-slate-200 dark:border-slate-700 h-full">
+        <Card className="h-full">
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">History</h2>
             {history.length === 0 ? (
                 <div className="text-center text-slate-500 dark:text-slate-400 py-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
@@ -57,7 +58,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onLoad, onDelete }
                     ))}
                 </ul>
             )}
-        </div>
+        </Card>
     );
 };
 

@@ -2,17 +2,19 @@
 
 > An intelligent tool that transforms basic user prompts into optimized, high-quality prompts that generate significantly better AI outputs.
 
-PerfectPrompt is a web-based tool designed to help users craft effective prompts for AI models. It analyzes a user's basic input and enhances it using proven prompt engineering techniques, resulting in clearer, more detailed prompts that produce superior AI-generated content.
+PerfectPrompt is a web-based tool designed to help users craft effective prompts for AI models. It analyzes a user's basic input, suggests actionable improvements, and then applies the selected changes to generate a superior prompt.
 
 ## 🚀 Key Features
 
-*   **📝 Prompt Input & Enhancement:** A clean interface with a text area for your original prompt and a one-click "Enhance" button.
-*   **🎨 Category-Specific Tuning:** Select a category (e.g., Code Generation, Creative Writing) to tailor the enhancement process.
-*   **↔️ Side-by-Side Comparison:** Instantly see the difference between your original prompt and the AI-enhanced version.
-*   **📋 Changes Analysis:** Get a clear, bulleted list of the specific improvements made to your prompt.
+*   **📝 Interactive Enhancement:** Enter a prompt and receive a list of actionable suggestions for improvement from the Gemini AI.
+*   **✅ Review & Apply:** You have full control. Review the suggestions, select the ones you like, and apply them to generate the final enhanced prompt.
+*   **🎨 Category-Specific Tuning:** Select a category (e.g., Code Generation, Creative Writing) to tailor the enhancement process for your specific needs.
+*   **🔍 Changes Analysis:** Get a clear, bulleted list of the specific improvements made to your prompt.
 *   **💾 Local History:** Your past 50 enhancements are automatically saved in your browser's local storage for easy access.
 *   **☀️/🌙 Light & Dark Mode:** A sleek, responsive design that adapts to your preferred theme.
-*   **✂️ Copy to Clipboard:** Easily copy the enhanced prompt to use in any AI tool.
+*   **✂️ Copy & Test:** Easily copy the enhanced prompt or test it directly within the app to see the generated output from Gemini.
+*   **📚 Prompt Library:** Get started quickly with a curated library of prompt templates for various use cases.
+
 
 ## 🛠️ Built With
 
@@ -84,13 +86,15 @@ You will need [Node.js](https://nodejs.org/) installed on your computer. This wi
 
 ```
 /
-├── components/         # Reusable React components
+├── components/         # Feature-specific React components
 │   ├── icons/          # SVG icon components
-│   ├── ComparisonView.tsx
+│   ├── ui/             # Reusable, generic UI components (Button, Card, etc.)
 │   ├── Header.tsx
 │   ├── HistoryPanel.tsx
-│   ├── PromptEditor.tsx
-│   └── ThemeToggle.tsx
+│   ├── PromptEditor.tsx  # Main controller component
+│   ├── PromptForm.tsx    # Component for prompt input
+│   ├── PromptResultView.tsx # Component for displaying results
+│   └── ...
 ├── hooks/              # Custom React hooks
 │   └── useLocalStorage.ts
 ├── services/           # API interaction logic

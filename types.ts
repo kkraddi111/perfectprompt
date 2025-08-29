@@ -13,12 +13,6 @@ export interface EnhancedPromptResponse {
     changes: string[];
 }
 
-// FIX: Export missing ABTestResult type.
-export interface ABTestResult {
-    a: string;
-    b?: string;
-}
-
 export interface PromptTemplate {
   title: string;
   description: string;

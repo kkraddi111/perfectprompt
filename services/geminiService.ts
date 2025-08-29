@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, GenerateContentRequest } from "@google/genai";
 import type { EnhancedPromptResponse } from '../types';
 
 if (!process.env.API_KEY) {
@@ -7,6 +7,21 @@ if (!process.env.API_KEY) {
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// Internal helper to centralize API calls, error handling, and JSON parsing
+const _handleApiCall = async <T>(request: GenerateContentRequest, caller: string): Promise<T> => {
+    if (process.env.API_KEY === "MISSING_API_KEY") {
+        throw new Error("Gemini API key is not configured.");
+    }
+    try {
+        const result = await ai.models.generateContent(request);
+        const jsonString = result.text.trim();
+        return JSON.parse(jsonString) as T;
+    } catch (error) {
+        console.error(`Error in ${caller}:`, error);
+        throw new Error(`Failed to ${caller.toLowerCase()}: ${error instanceof Error ? error.message : 'Unknown API error'}`);
+    }
+};
 
 const suggestionsSchema = {
     type: Type.OBJECT,
@@ -30,9 +45,7 @@ const enhancementSchema = {
         changes: {
             type: Type.ARRAY,
             description: "A list of the actionable changes that were made to generate the enhanced prompt, derived from the user's selections.",
-            items: {
-                type: Type.STRING
-            }
+            items: { type: Type.STRING }
         }
     },
     required: ['enhancedPrompt', 'changes']
@@ -54,17 +67,13 @@ const getModelSpecificInstructions = (model: string): string => {
         default:
             return '';
     }
-}
+};
 
 export const getEnhancementSuggestions = async (originalPrompt: string, category: string, model: string): Promise<string[]> => {
-    if (process.env.API_KEY === "MISSING_API_KEY") {
-        return Promise.reject(new Error("Gemini API key is not configured."));
-    }
     const modelInstructions = getModelSpecificInstructions(model);
-    try {
-        const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 concise, actionable improvements.
+    const request = {
+        model: "gemini-2.5-flash",
+        contents: `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 concise, actionable improvements.
 
 Target Model: ${model}
 Category: "${category}"
@@ -78,37 +87,25 @@ ${originalPrompt}
 Focus on proven techniques: Context, Formatting, Role Assignment, Clarity, Constraints, and Examples.
 
 Return ONLY the raw JSON object.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: suggestionsSchema,
-                temperature: 0.5,
-            }
-        });
-
-        const jsonString = result.text.trim();
-        const parsedResponse = JSON.parse(jsonString);
-
-        if (!Array.isArray(parsedResponse.suggestions)) {
-            throw new Error("Invalid JSON structure received for suggestions.");
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: suggestionsSchema,
+            temperature: 0.5,
         }
-        return parsedResponse.suggestions;
-
-    } catch (error) {
-        console.error("Error getting suggestions:", error);
-        throw new Error(`Failed to get suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    };
+    
+    const response = await _handleApiCall<{ suggestions: string[] }>(request, "get suggestions");
+    if (!Array.isArray(response.suggestions)) {
+        throw new Error("Invalid JSON structure received for suggestions.");
     }
+    return response.suggestions;
 };
 
 export const applyEnhancements = async (originalPrompt: string, changesToApply: string[], category: string, model: string): Promise<EnhancedPromptResponse> => {
-     if (process.env.API_KEY === "MISSING_API_KEY") {
-        return Promise.reject(new Error("Gemini API key is not configured."));
-    }
     const modelInstructions = getModelSpecificInstructions(model);
-
-    try {
-        const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: `You are an expert prompt engineer. Your task is to rewrite a user's prompt by applying a specific list of improvements.
+    const request = {
+        model: "gemini-2.5-flash",
+        contents: `You are an expert prompt engineer. Your task is to rewrite a user's prompt by applying a specific list of improvements.
 
 Return a JSON object containing two keys:
 1. "changes": A list of the improvements you applied. This should be very similar to the requested changes.
@@ -127,32 +124,23 @@ Apply these exact changes:
 - ${changesToApply.join('\n- ')}
 
 Return ONLY the raw JSON object.`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: enhancementSchema,
-                temperature: 0.4,
-            }
-        });
-        const jsonString = result.text.trim();
-        const parsedResponse = JSON.parse(jsonString);
-
-        if (!parsedResponse.enhancedPrompt || !Array.isArray(parsedResponse.changes)) {
-            throw new Error("Invalid JSON structure received from API.");
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: enhancementSchema,
+            temperature: 0.4,
         }
-        return {
-            enhancedPrompt: parsedResponse.enhancedPrompt,
-            changes: parsedResponse.changes
-        };
+    };
 
-    } catch (error) {
-        console.error("Error applying enhancements:", error);
-        throw new Error(`Failed to apply enhancements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const response = await _handleApiCall<EnhancedPromptResponse>(request, "apply enhancements");
+    if (!response.enhancedPrompt || !Array.isArray(response.changes)) {
+        throw new Error("Invalid JSON structure received from API.");
     }
+    return response;
 };
 
 export const generateTestResponse = async (prompt: string): Promise<string> => {
     if (process.env.API_KEY === "MISSING_API_KEY") {
-        return Promise.reject(new Error("Gemini API key is not configured. Please set the API_KEY environment variable."));
+        return Promise.reject(new Error("Gemini API key is not configured."));
     }
     try {
         const result = await ai.models.generateContent({
