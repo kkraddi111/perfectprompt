@@ -47,7 +47,6 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
     const handleGetSuggestions = async (currentPrompt: string, currentCategory: string, currentModel: string) => {
         if (!currentPrompt.trim() || enhancementStep !== 'form') return;
         
-        // Persist form state in case of error
         setPrompt(currentPrompt);
         setCategory(currentCategory);
         setModel(currentModel);
@@ -57,7 +56,6 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
         try {
             const suggestionsResult = await getEnhancementSuggestions(currentPrompt, currentCategory, currentModel);
             setSuggestions(suggestionsResult);
-            // Pre-select all suggestions by extracting their text
             setSelectedChanges(suggestionsResult.map(s => s.suggestion));
             setEnhancementStep('reviewing');
         } catch (err) {
@@ -87,12 +85,13 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
 
     const isLoading = enhancementStep === 'suggesting' || enhancementStep === 'applying';
     const isReviewing = enhancementStep === 'reviewing';
+    const showStartNewButton = enhancedResult || isReviewing || isLoading;
 
     return (
         <Card>
             <div className="flex justify-between items-center mb-4">
                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Prompt Enhancer</h2>
-                 {(enhancedResult || isReviewing || isLoading) && (
+                 {showStartNewButton && (
                     <button
                         onClick={onClear}
                         className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
@@ -119,7 +118,6 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
                         isLoading={enhancementStep === 'suggesting'}
                         isEditingDisabled={isReviewing || isLoading}
                     />
-                    {/* FIX: Keep SuggestionsView mounted during the 'applying' state to show the loading indicator. This resolves the reported comparison error which was caused by an incorrect state transition. */}
                     {(enhancementStep === 'reviewing' || enhancementStep === 'applying') && (
                         <SuggestionsView 
                             suggestions={suggestions}

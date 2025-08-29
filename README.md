@@ -6,13 +6,14 @@ PerfectPrompt is a web-based tool designed to help users craft effective prompts
 
 ## 🚀 Key Features
 
-*   **📝 Interactive Enhancement:** Enter a prompt and receive a list of actionable suggestions for improvement from the Gemini AI.
+*   **📝 Interactive Enhancement:** Enter a prompt and receive a list of actionable suggestions for improvement from the Gemini AI, categorized by prompting technique.
 *   **✅ Review & Apply:** You have full control. Review the suggestions, select the ones you like, and apply them to generate the final enhanced prompt.
-*   **🎨 Category-Specific Tuning:** Select a category (e.g., Code Generation, Creative Writing) to tailor the enhancement process for your specific needs.
+*   **🎨 Category-Specific Tuning:** Select a category (e.g., Code Generation, Creative Writing) and a target model to tailor the enhancement process for your specific needs.
 *   **🔍 Changes Analysis:** Get a clear, bulleted list of the specific improvements made to your prompt.
+*   **💡 Learn Techniques:** An integrated library teaches foundational and advanced prompting techniques with clear explanations and examples.
 *   **💾 Local History:** Your past 50 enhancements are automatically saved in your browser's local storage for easy access.
 *   **☀️/🌙 Light & Dark Mode:** A sleek, responsive design that adapts to your preferred theme.
-*   **✂️ Copy & Test:** Easily copy the enhanced prompt or test it directly within the app to see the generated output from Gemini.
+*   **▶️ Test Prompt:** Instantly test your newly enhanced prompt directly within the app to see the generated output from Gemini.
 *   **📚 Prompt Library:** Get started quickly with a curated library of prompt templates for various use cases.
 
 
@@ -88,7 +89,7 @@ You will need [Node.js](https://nodejs.org/) installed on your computer. This wi
 /
 ├── components/         # Feature-specific React components
 │   ├── icons/          # SVG icon components
-│   ├── ui/             # Reusable, generic UI components (Button, Card, etc.)
+│   ├── ui/             # Reusable, generic UI components (Button, Card, Modal etc.)
 │   ├── Header.tsx
 │   ├── HistoryPanel.tsx
 │   ├── PromptEditor.tsx  # Main controller component

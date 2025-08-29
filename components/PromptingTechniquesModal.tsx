@@ -1,6 +1,6 @@
 import React from 'react';
 import { FOUNDATIONAL_TECHNIQUES, ADVANCED_TECHNIQUES } from '../techniques';
-import XMarkIcon from './icons/XMarkIcon';
+import Modal from './ui/Modal';
 import type { PromptingTechnique } from '../types';
 
 interface PromptingTechniquesModalProps {
@@ -30,37 +30,20 @@ const TechniqueSection: React.FC<{ title: string; techniques: PromptingTechnique
 
 
 const PromptingTechniquesModal: React.FC<PromptingTechniquesModalProps> = ({ isOpen, onClose }) => {
-    if (!isOpen) {
-        return null;
-    }
-
     return (
-        <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
-            onClick={onClose}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="techniques-library-title"
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Prompting Techniques"
+            className="w-full max-w-3xl h-[80vh] max-h-[700px]"
         >
-            <div 
-                className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-3xl h-[80vh] max-h-[700px] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
-                onClick={e => e.stopPropagation()}
-            >
-                <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-                    <h2 id="techniques-library-title" className="text-xl font-bold text-slate-800 dark:text-white">Prompting Techniques</h2>
-                    <button onClick={onClose} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Close modal">
-                        <XMarkIcon className="w-6 h-6" />
-                    </button>
-                </header>
-                
-                <main className="flex-1 p-6 overflow-y-auto">
-                     <div className="space-y-10">
-                        <TechniqueSection title="Foundational Techniques" techniques={FOUNDATIONAL_TECHNIQUES} />
-                        <TechniqueSection title="Advanced Techniques" techniques={ADVANCED_TECHNIQUES} />
-                    </div>
-                </main>
-            </div>
-        </div>
+            <main className="flex-1 p-6 overflow-y-auto">
+                 <div className="space-y-10">
+                    <TechniqueSection title="Foundational Techniques" techniques={FOUNDATIONAL_TECHNIQUES} />
+                    <TechniqueSection title="Advanced Techniques" techniques={ADVANCED_TECHNIQUES} />
+                </div>
+            </main>
+        </Modal>
     );
 };
 

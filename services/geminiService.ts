@@ -9,7 +9,6 @@ if (!process.env.API_KEY) {
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Internal helper to centralize API calls, error handling, and JSON parsing
-// FIX: Use GenerateContentParameters instead of the deprecated GenerateContentRequest.
 const _handleApiCall = async <T>(request: GenerateContentParameters, caller: string): Promise<T> => {
     if (process.env.API_KEY === "MISSING_API_KEY") {
         throw new Error("Gemini API key is not configured.");
@@ -65,29 +64,31 @@ const enhancementSchema = {
     required: ['enhancedPrompt', 'changes']
 };
 
-const getModelSpecificInstructions = (model: string): string => {
-    switch (model) {
-        case 'GPT-4o':
-            return `Pay special attention to structuring the prompt with clear headings (e.g., ## Context, ## Task) and step-by-step instructions, as this works well for GPT-4o.`;
-        case 'Claude 3 Sonnet':
-            return `Enclose key instructions, examples, or context within XML tags (e.g., <instructions></instructions>, <example></example>), as this is a known best practice for Claude 3 models.`;
-        case 'Cursor':
-            return `For Cursor, an AI code editor, suggestions should be action-oriented for code generation or modification. Think about specifying file context, language, and exact changes needed.`;
-        case 'Lovable':
-            return `For Lovable, a user research AI, suggestions should focus on tasks like generating user interview questions, summarizing feedback, or creating user personas.`;
-        case 'Bolt':
-            return `For Bolt, an AI tool for search and content creation, suggestions should optimize for clarity, conciseness, and specifying output formats (e.g., 'as a bulleted list').`;
-        case 'Default (Gemini)':
-        default:
-            return '';
-    }
+const MODEL_INSTRUCTIONS_MAP: Record<string, string> = {
+    'GPT-4o': `Pay special attention to structuring the prompt with clear headings (e.g., ## Context, ## Task) and step-by-step instructions, as this works well for GPT-4o.`,
+    'Claude 3 Sonnet': `Enclose key instructions, examples, or context within XML tags (e.g., <instructions></instructions>, <example></example>), as this is a known best practice for Claude 3 models.`,
+    'Cursor': `For Cursor, an AI code editor, suggestions should be action-oriented for code generation or modification. Think about specifying file context, language, and exact changes needed.`,
+    'Lovable': `For Lovable, a user research AI, suggestions should focus on tasks like generating user interview questions, summarizing feedback, or creating user personas.`,
+    'Bolt': `For Bolt, an AI tool for search and content creation, suggestions should optimize for clarity, conciseness, and specifying output formats (e.g., 'as a bulleted list').`
 };
+
+const getModelSpecificInstructions = (model: string): string => {
+    return MODEL_INSTRUCTIONS_MAP[model] || '';
+};
+
+const createApiRequest = (contents: string, responseSchema: object, temperature: number): GenerateContentParameters => ({
+    model: "gemini-2.5-flash",
+    contents,
+    config: {
+        responseMimeType: "application/json",
+        responseSchema,
+        temperature,
+    }
+});
 
 export const getEnhancementSuggestions = async (originalPrompt: string, category: string, model: string): Promise<Suggestion[]> => {
     const modelInstructions = getModelSpecificInstructions(model);
-    const request = {
-        model: "gemini-2.5-flash",
-        contents: `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 objects. Each object must have two keys: "technique" and "suggestion".
+    const contents = `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 objects. Each object must have two keys: "technique" and "suggestion".
 
 **Prompting Techniques to use:**
 - Role Prompting
@@ -108,15 +109,11 @@ ${originalPrompt}
 
 Focus on proven techniques. Each suggestion must be concise and actionable.
 
-Return ONLY the raw JSON object.`,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: suggestionsSchema,
-            temperature: 0.5,
-        }
-    };
+Return ONLY the raw JSON object.`;
     
+    const request = createApiRequest(contents, suggestionsSchema, 0.5);
     const response = await _handleApiCall<{ suggestions: Suggestion[] }>(request, "get suggestions");
+    
     if (!Array.isArray(response.suggestions)) {
         throw new Error("Invalid JSON structure received for suggestions.");
     }
@@ -125,9 +122,7 @@ Return ONLY the raw JSON object.`,
 
 export const applyEnhancements = async (originalPrompt: string, changesToApply: string[], category: string, model: string): Promise<EnhancedPromptResponse> => {
     const modelInstructions = getModelSpecificInstructions(model);
-    const request = {
-        model: "gemini-2.5-flash",
-        contents: `You are an expert prompt engineer. Your task is to rewrite a user's prompt by applying a specific list of improvements.
+    const contents = `You are an expert prompt engineer. Your task is to rewrite a user's prompt by applying a specific list of improvements.
 
 Return a JSON object containing two keys:
 1. "changes": A list of the improvements you applied. This should be very similar to the requested changes.
@@ -145,15 +140,11 @@ ${originalPrompt}
 Apply these exact changes:
 - ${changesToApply.join('\n- ')}
 
-Return ONLY the raw JSON object.`,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: enhancementSchema,
-            temperature: 0.4,
-        }
-    };
+Return ONLY the raw JSON object.`;
 
+    const request = createApiRequest(contents, enhancementSchema, 0.4);
     const response = await _handleApiCall<EnhancedPromptResponse>(request, "apply enhancements");
+    
     if (!response.enhancedPrompt || !Array.isArray(response.changes)) {
         throw new Error("Invalid JSON structure received from API.");
     }

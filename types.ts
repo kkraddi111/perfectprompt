@@ -34,9 +34,3 @@ export interface PromptTemplateCategory {
   category: string;
   templates: PromptTemplate[];
 }
-
-// FIX: Add missing ABTestResult type.
-export interface ABTestResult {
-    a: string;
-    b: string | null;
-}
