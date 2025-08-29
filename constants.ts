@@ -7,3 +7,9 @@ export const PROMPT_CATEGORIES: string[] = [
   'Roleplay',
   'Data Analysis'
 ];
+
+export const SUPPORTED_MODELS: string[] = [
+  'Default (Gemini)',
+  'GPT-4o',
+  'Claude 3 Sonnet',
+];

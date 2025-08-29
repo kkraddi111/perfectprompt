@@ -9,7 +9,7 @@ import type { PromptHistoryItem, EnhancedPromptResponse, PromptTemplate } from '
 const App: React.FC = () => {
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
     const [history, setHistory] = useLocalStorage<PromptHistoryItem[]>('prompt-history', []);
-    const [activePrompt, setActivePrompt] = useState<{ originalPrompt: string; category: string } | null>(null);
+    const [activePrompt, setActivePrompt] = useState<{ originalPrompt: string; category: string; model?: string; } | null>(null);
     const [enhancedResult, setEnhancedResult] = useState<EnhancedPromptResponse | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
@@ -19,9 +19,9 @@ const App: React.FC = () => {
         root.classList.add(theme);
     }, [theme]);
 
-    const handleNewEnhancedPrompt = useCallback((originalPrompt: string, category: string, response: EnhancedPromptResponse) => {
+    const handleNewEnhancedPrompt = useCallback((originalPrompt: string, category: string, model: string, response: EnhancedPromptResponse) => {
         setEnhancedResult(response);
-        setActivePrompt({ originalPrompt, category });
+        setActivePrompt({ originalPrompt, category, model });
         
         const newHistoryItem: PromptHistoryItem = {
             id: new Date().toISOString(),
@@ -29,13 +29,14 @@ const App: React.FC = () => {
             enhancedPrompt: response.enhancedPrompt,
             category,
             changes: response.changes,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            model
         };
         setHistory(prevHistory => [newHistoryItem, ...prevHistory].slice(0, 50)); // Limit history size
     }, [setHistory]);
 
     const handleLoadHistory = useCallback((item: PromptHistoryItem) => {
-        setActivePrompt({ originalPrompt: item.originalPrompt, category: item.category });
+        setActivePrompt({ originalPrompt: item.originalPrompt, category: item.category, model: item.model });
         setEnhancedResult({ enhancedPrompt: item.enhancedPrompt, changes: item.changes });
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
@@ -51,6 +52,7 @@ const App: React.FC = () => {
 
     const handleSelectTemplate = useCallback((template: PromptTemplate, category: string) => {
         handleClearCurrent();
+        // Selecting a template resets to a fresh state, including the default model.
         setActivePrompt({ originalPrompt: template.prompt, category: category });
         setIsLibraryOpen(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });

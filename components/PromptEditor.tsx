@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES } from '../constants';
+import { PROMPT_CATEGORIES, SUPPORTED_MODELS } from '../constants';
 import { enhancePrompt, generateTestResponse } from '../services/geminiService';
 import type { EnhancedPromptResponse } from '../types';
 import ComparisonView from './ComparisonView';
@@ -7,8 +7,8 @@ import SandboxResult from './SandboxResult';
 import SparklesIcon from './icons/SparklesIcon';
 
 interface PromptEditorProps {
-    onNewEnhancedPrompt: (originalPrompt: string, category: string, response: EnhancedPromptResponse) => void;
-    activePrompt: { originalPrompt: string; category: string } | null;
+    onNewEnhancedPrompt: (originalPrompt: string, category: string, model: string, response: EnhancedPromptResponse) => void;
+    activePrompt: { originalPrompt: string; category: string; model?: string; } | null;
     enhancedResult: EnhancedPromptResponse | null;
     onClear: () => void;
 }
@@ -16,6 +16,7 @@ interface PromptEditorProps {
 const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, activePrompt, enhancedResult, onClear }) => {
     const [prompt, setPrompt] = useState('');
     const [category, setCategory] = useState(PROMPT_CATEGORIES[0]);
+    const [model, setModel] = useState(SUPPORTED_MODELS[0]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,9 +29,11 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
         if (activePrompt) {
             setPrompt(activePrompt.originalPrompt);
             setCategory(activePrompt.category);
+            setModel(activePrompt.model || SUPPORTED_MODELS[0]);
         } else {
             setPrompt('');
             setCategory(PROMPT_CATEGORIES[0]);
+            setModel(SUPPORTED_MODELS[0]);
         }
     }, [activePrompt]);
 
@@ -53,8 +56,8 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
         setSandboxResult(null);
         setSandboxError(null);
         try {
-            const response = await enhancePrompt(prompt, category);
-            onNewEnhancedPrompt(prompt, category, response);
+            const response = await enhancePrompt(prompt, category, model);
+            onNewEnhancedPrompt(prompt, category, model, response);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
         } finally {
@@ -96,21 +99,39 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
             </div>
             
             <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                    <label htmlFor="prompt-category" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
-                        Category
-                    </label>
-                    <select
-                        id="prompt-category"
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm p-2.5 focus:ring-primary-500 focus:border-primary-500"
-                        disabled={isLoading}
-                    >
-                        {PROMPT_CATEGORIES.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                    </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label htmlFor="prompt-category" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
+                            Category
+                        </label>
+                        <select
+                            id="prompt-category"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm p-2.5 focus:ring-primary-500 focus:border-primary-500"
+                            disabled={isLoading}
+                        >
+                            {PROMPT_CATEGORIES.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+                     <div>
+                        <label htmlFor="target-model" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
+                            Target Model
+                        </label>
+                        <select
+                            id="target-model"
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                            className="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm p-2.5 focus:ring-primary-500 focus:border-primary-500"
+                            disabled={isLoading}
+                        >
+                            {SUPPORTED_MODELS.map(mod => (
+                                <option key={mod} value={mod}>{mod}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div className="mb-4">
                     <label htmlFor="prompt-input" className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
@@ -143,7 +164,7 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
                     >
                         {isLoading ? (
                             <>
-                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>

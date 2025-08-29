@@ -5,6 +5,7 @@ export interface PromptHistoryItem {
   category: string;
   changes: string[];
   timestamp: number;
+  model?: string;
 }
 
 export interface EnhancedPromptResponse {

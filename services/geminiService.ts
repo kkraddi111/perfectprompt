@@ -26,14 +26,32 @@ const responseSchema = {
     required: ['enhancedPrompt', 'changes']
 };
 
-export const enhancePrompt = async (originalPrompt: string, category: string): Promise<EnhancedPromptResponse> => {
+const getModelSpecificInstructions = (model: string): string => {
+    switch (model) {
+        case 'GPT-4o':
+            return `Pay special attention to structuring the prompt with clear headings (e.g., ## Context, ## Task) and step-by-step instructions, as this works well for GPT-4o.`;
+        case 'Claude 3 Sonnet':
+            return `Enclose key instructions, examples, or context within XML tags (e.g., <instructions></instructions>, <example></example>), as this is a known best practice for Claude 3 models.`;
+        case 'Default (Gemini)':
+        default:
+            return '';
+    }
+}
+
+export const enhancePrompt = async (originalPrompt: string, category: string, model: string): Promise<EnhancedPromptResponse> => {
     if (process.env.API_KEY === "MISSING_API_KEY") {
         return Promise.reject(new Error("Gemini API key is not configured. Please set the API_KEY environment variable."));
     }
+
+    const modelInstructions = getModelSpecificInstructions(model);
+
     try {
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `You are an expert prompt engineer. Enhance the following prompt for the category: "${category}".
+            contents: `You are an expert prompt engineer. Your task is to enhance the following user-provided prompt.
+
+Target Model: ${model}
+Category: "${category}"
 
 Original Prompt:
 ---
@@ -48,6 +66,7 @@ Apply proven prompt engineering techniques where appropriate, such as:
 - **Constraint Setting:** Add constraints like word count, tone, or what to avoid.
 - **Exemplars:** Provide few-shot examples if it helps.
 
+${modelInstructions ? `**Model-Specific Optimizations:**\n${modelInstructions}\n` : ''}
 Return ONLY the raw JSON object, without any markdown formatting like \`\`\`json.
 `,
             config: {

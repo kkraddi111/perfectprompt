@@ -40,7 +40,10 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onLoad, onDelete }
                             <div className="flex justify-between items-start">
                                 <div className="text-left flex-1 overflow-hidden">
                                     <p className="text-sm font-semibold text-primary-700 dark:text-primary-400 truncate">{item.originalPrompt}</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.category} &middot; {timeAgo(item.timestamp)}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                        {item.category} &middot; {timeAgo(item.timestamp)}
+                                        {item.model && <span className="ml-2 pl-2 border-l border-slate-300 dark:border-slate-600">{item.model}</span>}
+                                    </p>
                                 </div>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
