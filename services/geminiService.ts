@@ -8,16 +8,28 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const responseSchema = {
+const suggestionsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        suggestions: {
+            type: Type.ARRAY,
+            description: "A list of 3-5 high-impact, actionable suggestions to improve the prompt. Each suggestion should be a concise sentence.",
+            items: { type: Type.STRING }
+        }
+    },
+    required: ['suggestions']
+};
+
+const enhancementSchema = {
     type: Type.OBJECT,
     properties: {
         enhancedPrompt: {
             type: Type.STRING,
-            description: "The improved, enhanced prompt."
+            description: "The improved, enhanced prompt, rewritten to be more effective based on the requested changes."
         },
         changes: {
             type: Type.ARRAY,
-            description: "A list of concise descriptions of the changes made to the original prompt.",
+            description: "A list of the actionable changes that were made to generate the enhanced prompt, derived from the user's selections.",
             items: {
                 type: Type.STRING
             }
@@ -33,69 +45,108 @@ const getModelSpecificInstructions = (model: string): string => {
         case 'Claude 3 Sonnet':
             return `Enclose key instructions, examples, or context within XML tags (e.g., <instructions></instructions>, <example></example>), as this is a known best practice for Claude 3 models.`;
         case 'Cursor':
-            return `Cursor is an AI code editor. Prompts should be action-oriented for code generation or modification. Advise the AI to be explicit about file context, language, and the exact changes needed. Using diff formats or specifying function signatures can be effective.`;
+            return `For Cursor, an AI code editor, suggestions should be action-oriented for code generation or modification. Think about specifying file context, language, and exact changes needed.`;
         case 'Lovable':
-            return `Lovable is a user research AI. Prompts should focus on tasks like generating user interview questions, summarizing feedback, or creating user personas. Instruct the AI to maintain a neutral, inquisitive tone and to structure outputs clearly for analysis.`;
+            return `For Lovable, a user research AI, suggestions should focus on tasks like generating user interview questions, summarizing feedback, or creating user personas.`;
         case 'Bolt':
-            return `Bolt is an AI tool for search and content creation. Optimize prompts for clarity and conciseness. Suggest specifying the desired output format (e.g., 'as a bulleted list', 'in a markdown table') and the target audience for the content.`;
+            return `For Bolt, an AI tool for search and content creation, suggestions should optimize for clarity, conciseness, and specifying output formats (e.g., 'as a bulleted list').`;
         case 'Default (Gemini)':
         default:
             return '';
     }
 }
 
-export const enhancePrompt = async (originalPrompt: string, category: string, model: string): Promise<EnhancedPromptResponse> => {
+export const getEnhancementSuggestions = async (originalPrompt: string, category: string, model: string): Promise<string[]> => {
     if (process.env.API_KEY === "MISSING_API_KEY") {
-        return Promise.reject(new Error("Gemini API key is not configured. Please set the API_KEY environment variable."));
+        return Promise.reject(new Error("Gemini API key is not configured."));
     }
-
     const modelInstructions = getModelSpecificInstructions(model);
-
     try {
         const result = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `You are an expert prompt engineer. Your task is to enhance the following user-provided prompt.
+            contents: `You are an expert prompt engineer. Your task is to analyze the following user prompt and suggest improvements. Return a JSON object with a "suggestions" key, which contains a list of 3-5 concise, actionable improvements.
 
 Target Model: ${model}
 Category: "${category}"
+${modelInstructions ? `**Model-Specific Considerations:**\n${modelInstructions}\n` : ''}
 
 Original Prompt:
 ---
 ${originalPrompt}
 ---
 
-Apply proven prompt engineering techniques where appropriate, such as:
-- **Context Addition:** Add relevant background information.
-- **Format Specification:** Specify the desired output format (e.g., JSON, markdown, list).
-- **Role Assignment:** Assign a persona or role to the AI (e.g., "Act as a senior software engineer...").
-- **Clarity Improvement:** Rephrase for precision and remove ambiguity.
-- **Constraint Setting:** Add constraints like word count, tone, or what to avoid.
-- **Exemplars:** Provide few-shot examples if it helps.
+Focus on proven techniques: Context, Formatting, Role Assignment, Clarity, Constraints, and Examples.
 
-${modelInstructions ? `**Model-Specific Optimizations:**\n${modelInstructions}\n` : ''}
-Return ONLY the raw JSON object, without any markdown formatting like \`\`\`json.
-`,
+Return ONLY the raw JSON object.`,
             config: {
                 responseMimeType: "application/json",
-                responseSchema: responseSchema,
+                responseSchema: suggestionsSchema,
                 temperature: 0.5,
             }
         });
 
         const jsonString = result.text.trim();
-        const parsedResponse: EnhancedPromptResponse = JSON.parse(jsonString);
-        
+        const parsedResponse = JSON.parse(jsonString);
+
+        if (!Array.isArray(parsedResponse.suggestions)) {
+            throw new Error("Invalid JSON structure received for suggestions.");
+        }
+        return parsedResponse.suggestions;
+
+    } catch (error) {
+        console.error("Error getting suggestions:", error);
+        throw new Error(`Failed to get suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+};
+
+export const applyEnhancements = async (originalPrompt: string, changesToApply: string[], category: string, model: string): Promise<EnhancedPromptResponse> => {
+     if (process.env.API_KEY === "MISSING_API_KEY") {
+        return Promise.reject(new Error("Gemini API key is not configured."));
+    }
+    const modelInstructions = getModelSpecificInstructions(model);
+
+    try {
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `You are an expert prompt engineer. Your task is to rewrite a user's prompt by applying a specific list of improvements.
+
+Return a JSON object containing two keys:
+1. "changes": A list of the improvements you applied. This should be very similar to the requested changes.
+2. "enhancedPrompt": The final, rewritten prompt.
+
+Target Model: ${model}
+Category: "${category}"
+${modelInstructions ? `**Model-Specific Optimizations:**\n${modelInstructions}\n` : ''}
+
+Original Prompt:
+---
+${originalPrompt}
+---
+
+Apply these exact changes:
+- ${changesToApply.join('\n- ')}
+
+Return ONLY the raw JSON object.`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: enhancementSchema,
+                temperature: 0.4,
+            }
+        });
+        const jsonString = result.text.trim();
+        const parsedResponse = JSON.parse(jsonString);
+
         if (!parsedResponse.enhancedPrompt || !Array.isArray(parsedResponse.changes)) {
             throw new Error("Invalid JSON structure received from API.");
         }
+        return {
+            enhancedPrompt: parsedResponse.enhancedPrompt,
+            changes: parsedResponse.changes
+        };
 
-        return parsedResponse;
     } catch (error) {
-        console.error("Error enhancing prompt:", error);
-        if (error instanceof Error) {
-            throw new Error(`Failed to enhance prompt: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred while enhancing the prompt.");
+        console.error("Error applying enhancements:", error);
+        throw new Error(`Failed to apply enhancements: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
 
