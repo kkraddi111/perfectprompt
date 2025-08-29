@@ -16,20 +16,49 @@ export function initializeGeminiClient(apiKey: string | null) {
   }
 }
 
-// Internal helper to centralize API calls, error handling, and JSON parsing
-const _handleApiCall = async <T>(request: GenerateContentParameters, caller: string): Promise<T> => {
-    if (!ai) {
-        throw new Error("Gemini API key is not configured. Please add it in the Settings menu (⚙️).");
-    }
+const MISSING_KEY_ERROR = "Gemini API key is not configured. Please add it in the Settings menu (⚙️).";
+
+/**
+ * A generic API handler for requests that return a JSON string.
+ * It handles the API call, error logging, and JSON parsing.
+ * @private
+ */
+const _handleJsonApiCall = async <T>(request: GenerateContentParameters, caller: string): Promise<T> => {
+    if (!ai) throw new Error(MISSING_KEY_ERROR);
+    
     try {
         const result = await ai.models.generateContent(request);
         const jsonString = result.text.trim();
+        if (!jsonString.startsWith('{') && !jsonString.startsWith('[')) {
+            throw new Error("API did not return a valid JSON object.");
+        }
         return JSON.parse(jsonString) as T;
     } catch (error) {
         console.error(`Error in ${caller}:`, error);
         throw new Error(`Failed to ${caller.toLowerCase()}: ${error instanceof Error ? error.message : 'Unknown API error'}`);
     }
 };
+
+/**
+ * A generic API handler for requests that return a raw text string.
+ * It handles the API call and error logging.
+ * @private
+ */
+const _handleTextApiCall = async (request: GenerateContentParameters, caller: string): Promise<string> => {
+    if (!ai) throw new Error(MISSING_KEY_ERROR);
+
+    try {
+        const result = await ai.models.generateContent(request);
+        return result.text;
+    } catch (error) {
+        console.error(`Error in ${caller}:`, error);
+        if (error instanceof Error) {
+            throw new Error(`Failed to ${caller.toLowerCase()}: ${error.message}`);
+        }
+        throw new Error(`An unknown error occurred while trying to ${caller.toLowerCase()}.`);
+    }
+}
+
 
 const suggestionsSchema = {
     type: Type.OBJECT,
@@ -120,7 +149,7 @@ Focus on proven techniques. Each suggestion must be concise and actionable.
 Return ONLY the raw JSON object.`;
     
     const request = createApiRequest(contents, suggestionsSchema, 0.5);
-    const response = await _handleApiCall<{ suggestions: Suggestion[] }>(request, "get suggestions");
+    const response = await _handleJsonApiCall<{ suggestions: Suggestion[] }>(request, "get suggestions");
     
     if (!Array.isArray(response.suggestions)) {
         throw new Error("Invalid JSON structure received for suggestions.");
@@ -151,7 +180,7 @@ Apply these exact changes:
 Return ONLY the raw JSON object.`;
 
     const request = createApiRequest(contents, enhancementSchema, 0.4);
-    const response = await _handleApiCall<EnhancedPromptResponse>(request, "apply enhancements");
+    const response = await _handleJsonApiCall<EnhancedPromptResponse>(request, "apply enhancements");
     
     if (!response.enhancedPrompt || !Array.isArray(response.changes)) {
         throw new Error("Invalid JSON structure received from API.");
@@ -160,23 +189,12 @@ Return ONLY the raw JSON object.`;
 };
 
 export const generateTestResponse = async (prompt: string): Promise<string> => {
-    if (!ai) {
-        return Promise.reject(new Error("Gemini API key is not configured. Please add it in the Settings menu (⚙️)."));
-    }
-    try {
-        const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                temperature: 0.7,
-            }
-        });
-        return result.text;
-    } catch (error) {
-        console.error("Error generating test response:", error);
-         if (error instanceof Error) {
-            throw new Error(`Failed to generate response: ${error.message}`);
+    const request: GenerateContentParameters = {
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+            temperature: 0.7,
         }
-        throw new Error("An unknown error occurred while generating the response.");
-    }
+    };
+    return _handleTextApiCall(request, "generate test response");
 };

@@ -6,6 +6,7 @@ PerfectPrompt is a web-based tool designed to help users craft effective prompts
 
 ## 🚀 Key Features
 
+*   **🔑 User-Provided API Key:** Securely add your own Google Gemini API key directly in the app's settings. Your key is stored only in your browser's local storage.
 *   **📝 Interactive Enhancement:** Enter a prompt and receive a list of actionable suggestions for improvement from the Gemini AI, categorized by prompting technique.
 *   **✅ Review & Apply:** You have full control. Review the suggestions, select the ones you like, and apply them to generate the final enhanced prompt.
 *   **🎨 Category-Specific Tuning:** Select a category (e.g., Code Generation, Creative Writing) and a target model to tailor the enhancement process for your specific needs.
@@ -21,6 +22,7 @@ PerfectPrompt is a web-based tool designed to help users craft effective prompts
 
 *   **Framework:** [React](https://reactjs.org/)
 *   **Language:** [TypeScript](https://www.typescriptlang.org/)
+*   **Build Tool:** [Vite](https://vitejs.dev/)
 *   **AI Model:** [Google Gemini API](https://ai.google.dev/)
 *   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 
@@ -30,7 +32,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 ### Prerequisites
 
-You will need [Node.js](https://nodejs.org/) installed on your computer. This will also install `npm`, the Node package manager.
+You will need [Node.js](https://nodejs.org/) (version 18 or newer recommended) installed on your computer. This will also install `npm`, the Node package manager.
 
 ### Installation & Setup
 
@@ -41,68 +43,63 @@ You will need [Node.js](https://nodejs.org/) installed on your computer. This wi
     ```
 
 2.  **Install dependencies:**
-    This project uses an `importmap` in `index.html` for its dependencies, so a traditional `npm install` is not required for the libraries themselves. However, you'll need a local development server to run the project. We recommend using a simple tool like `live-server`.
+    This will install React, Vite, and all other necessary packages.
     ```sh
-    npm install -g live-server
+    npm install
     ```
 
-3.  **Set up your API Key:**
-    The application loads the Google Gemini API key from environment variables. You will need to provide your key for the enhancement feature to work.
-
-    *   **Important:** This project is configured to use a build tool that makes `process.env.API_KEY` available on the client-side. When setting this up for production, use a tool like Vite or Create React App and follow their documentation for handling environment variables securely.
-
-    *   For local development, you can create a temporary file to inject the key. Create a file named `env.js` in the project root:
-        ```javascript
-        // env.js
-        window.process = {
-          env: {
-            API_KEY: 'YOUR_GEMINI_API_KEY_HERE'
-          }
-        };
-        ```
-
-    *   Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-
-    *   Add the script to your `index.html` **before** the main module script:
-        ```html
-        <!-- index.html -->
-        </head>
-        <body class="bg-slate-100 dark:bg-slate-900">
-          <div id="root"></div>
-          <script src="env.js"></script> <!-- Add this line -->
-          <script type="module" src="index.tsx"></script> <!-- Your main script -->
-        </body>
-        </html>
-        ```
-    *   **Note:** Remember to add `env.js` to your `.gitignore` file to avoid committing your secret key.
-
-4.  **Run the application:**
-    Start the local development server from your project root.
+3.  **Run the application:**
+    Start the local development server.
     ```sh
-    live-server
+    npm run dev
     ```
     This will automatically open the application in your default web browser.
+
+4.  **Add your API Key:**
+    *   Once the application is running, click the **Settings** icon (⚙️) in the header.
+    *   Paste your Google Gemini API Key into the input field and click "Save". You can get your key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+    *   The key is now saved in your browser's local storage, and you can start enhancing prompts.
+
+### Building for Production
+
+When you are ready to deploy, you can create an optimized build of the application.
+
+1.  **Run the build command:**
+    ```sh
+    npm run build
+    ```
+2.  This will create a `dist` directory with all the static files (HTML, CSS, JS) needed for deployment. You can upload the contents of this folder to any static web hosting service.
 
 ## 📂 Project Structure
 
 ```
 /
-├── components/         # Feature-specific React components
-│   ├── icons/          # SVG icon components
-│   ├── ui/             # Reusable, generic UI components (Button, Card, Modal etc.)
-│   ├── Header.tsx
-│   ├── HistoryPanel.tsx
-│   ├── PromptEditor.tsx  # Main controller component
-│   ├── PromptForm.tsx    # Component for prompt input
-│   ├── PromptResultView.tsx # Component for displaying results
-│   └── ...
-├── hooks/              # Custom React hooks
-│   └── useLocalStorage.ts
-├── services/           # API interaction logic
-│   └── geminiService.ts
-├── App.tsx             # Main application component
-├── constants.ts        # Application-wide constants
-├── index.html          # Main HTML entry point
-├── index.tsx           # React application root
-└── types.ts            # TypeScript type definitions
+├── src/                  # All application source code
+│   ├── components/       # React components
+│   ├── hooks/            # Custom React hooks
+│   ├── services/         # API interaction logic
+│   ├── App.tsx           # Main application component
+│   ├── constants.ts
+│   ├── index.tsx         # React application root
+│   └── types.ts
+├── index.html            # Main HTML entry point for Vite
+├── package.json          # Project dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+└── vite.config.ts        # Vite build tool configuration
 ```
+
+## 🧹 Project Cleanup
+
+After refactoring the project to use Vite, the following files and folders from the old structure are no longer needed and can be safely deleted to clean up the project root:
+
+*   `index.tsx` (at root level)
+*   `App.tsx` (at root level)
+*   `types.ts` (at root level)
+*   `constants.ts` (at root level)
+*   `templates.ts` (at root level)
+*   `techniques.ts` (at root level)
+*   `/components/` (the entire directory at root level)
+*   `/hooks/` (the entire directory at root level)
+*   `/services/` (the entire directory at root level)
+
+All source code now resides within the `/src/` directory, as shown in the structure diagram above.
