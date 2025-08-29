@@ -73,3 +73,25 @@ Return ONLY the raw JSON object, without any markdown formatting like \`\`\`json
         throw new Error("An unknown error occurred while enhancing the prompt.");
     }
 };
+
+export const generateTestResponse = async (prompt: string): Promise<string> => {
+    if (process.env.API_KEY === "MISSING_API_KEY") {
+        return Promise.reject(new Error("Gemini API key is not configured. Please set the API_KEY environment variable."));
+    }
+    try {
+        const result = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                temperature: 0.7,
+            }
+        });
+        return result.text;
+    } catch (error) {
+        console.error("Error generating test response:", error);
+         if (error instanceof Error) {
+            throw new Error(`Failed to generate response: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while generating the response.");
+    }
+};

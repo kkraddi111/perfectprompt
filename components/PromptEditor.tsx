@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PROMPT_CATEGORIES } from '../constants';
-import { enhancePrompt } from '../services/geminiService';
+import { enhancePrompt, generateTestResponse } from '../services/geminiService';
 import type { EnhancedPromptResponse } from '../types';
 import ComparisonView from './ComparisonView';
+import SandboxResult from './SandboxResult';
 import SparklesIcon from './icons/SparklesIcon';
 
 interface PromptEditorProps {
@@ -18,6 +19,11 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // State for the Sandbox feature
+    const [isSandboxLoading, setIsSandboxLoading] = useState(false);
+    const [sandboxResult, setSandboxResult] = useState<string | null>(null);
+    const [sandboxError, setSandboxError] = useState<string | null>(null);
+
     useEffect(() => {
         if (activePrompt) {
             setPrompt(activePrompt.originalPrompt);
@@ -28,12 +34,24 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
         }
     }, [activePrompt]);
 
+    // Clear sandbox when the main prompt is cleared
+    useEffect(() => {
+        if (!enhancedResult) {
+            setSandboxResult(null);
+            setSandboxError(null);
+            setIsSandboxLoading(false);
+        }
+    }, [enhancedResult]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!prompt.trim() || isLoading) return;
 
         setIsLoading(true);
         setError(null);
+        // Clear previous sandbox result on new enhancement
+        setSandboxResult(null);
+        setSandboxError(null);
         try {
             const response = await enhancePrompt(prompt, category);
             onNewEnhancedPrompt(prompt, category, response);
@@ -41,6 +59,22 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
             setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleTestPrompt = async () => {
+        if (!enhancedResult?.enhancedPrompt || isSandboxLoading) return;
+        
+        setIsSandboxLoading(true);
+        setSandboxResult(null);
+        setSandboxError(null);
+        try {
+            const response = await generateTestResponse(enhancedResult.enhancedPrompt);
+            setSandboxResult(response);
+        } catch (err) {
+            setSandboxError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+        } finally {
+            setIsSandboxLoading(false);
         }
     };
     
@@ -109,7 +143,7 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
                     >
                         {isLoading ? (
                             <>
-                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
@@ -130,7 +164,21 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
                     originalPrompt={activePrompt.originalPrompt}
                     enhancedPrompt={enhancedResult.enhancedPrompt}
                     changes={enhancedResult.changes}
+                    onTest={handleTestPrompt}
+                    isTesting={isSandboxLoading}
                 />
+            )}
+
+            {(isSandboxLoading || sandboxResult || sandboxError) && (
+                 <SandboxResult
+                    isLoading={isSandboxLoading}
+                    result={sandboxResult}
+                    error={sandboxError}
+                    onClose={() => {
+                        setSandboxResult(null);
+                        setSandboxError(null);
+                    }}
+                 />
             )}
         </div>
     );
