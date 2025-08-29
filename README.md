@@ -33,7 +33,7 @@ You will need [Node.js](https://nodejs.org/) installed on your computer. This wi
 
 1.  **Clone the repository:**
     ```sh
-    git clone <YOUR_REPOSITORY_URL>
+    git clone https://github.com/kkraddi111/perfectprompt
     cd perfectprompt
     ```
 
