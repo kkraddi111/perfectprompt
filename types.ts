@@ -11,3 +11,14 @@ export interface EnhancedPromptResponse {
     enhancedPrompt: string;
     changes: string[];
 }
+
+export interface PromptTemplate {
+  title: string;
+  description: string;
+  prompt: string;
+}
+
+export interface PromptTemplateCategory {
+  category: string;
+  templates: PromptTemplate[];
+}

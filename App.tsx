@@ -2,14 +2,16 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import PromptEditor from './components/PromptEditor';
 import HistoryPanel from './components/HistoryPanel';
+import PromptLibraryModal from './components/PromptLibraryModal';
 import { useLocalStorage } from './hooks/useLocalStorage';
-import type { PromptHistoryItem, EnhancedPromptResponse } from './types';
+import type { PromptHistoryItem, EnhancedPromptResponse, PromptTemplate } from './types';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
     const [history, setHistory] = useLocalStorage<PromptHistoryItem[]>('prompt-history', []);
     const [activePrompt, setActivePrompt] = useState<{ originalPrompt: string; category: string } | null>(null);
     const [enhancedResult, setEnhancedResult] = useState<EnhancedPromptResponse | null>(null);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -47,9 +49,16 @@ const App: React.FC = () => {
         setEnhancedResult(null);
     }
 
+    const handleSelectTemplate = useCallback((template: PromptTemplate, category: string) => {
+        handleClearCurrent();
+        setActivePrompt({ originalPrompt: template.prompt, category: category });
+        setIsLibraryOpen(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
     return (
         <div className="bg-slate-100 dark:bg-slate-900 min-h-screen text-slate-800 dark:text-slate-200 font-sans transition-colors duration-300">
-            <Header theme={theme} setTheme={setTheme} />
+            <Header theme={theme} setTheme={setTheme} onOpenLibrary={() => setIsLibraryOpen(true)} />
             <main className="container mx-auto p-4 md:p-6 lg:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     <div className="lg:col-span-2 flex flex-col gap-8">
@@ -69,6 +78,11 @@ const App: React.FC = () => {
                     </div>
                 </div>
             </main>
+            <PromptLibraryModal
+                isOpen={isLibraryOpen}
+                onClose={() => setIsLibraryOpen(false)}
+                onSelectTemplate={handleSelectTemplate}
+            />
         </div>
     );
 };

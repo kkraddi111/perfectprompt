@@ -1,0 +1,89 @@
+import React, { useState, Fragment } from 'react';
+import { PROMPT_TEMPLATES } from '../templates';
+import type { PromptTemplate } from '../types';
+import XMarkIcon from './icons/XMarkIcon';
+
+interface PromptLibraryModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSelectTemplate: (template: PromptTemplate, category: string) => void;
+}
+
+const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({ isOpen, onClose, onSelectTemplate }) => {
+    const [activeCategory, setActiveCategory] = useState(PROMPT_TEMPLATES[0].category);
+
+    if (!isOpen) {
+        return null;
+    }
+
+    const selectedCategoryTemplates = PROMPT_TEMPLATES.find(c => c.category === activeCategory)?.templates || [];
+
+    return (
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="prompt-library-title"
+        >
+            <div 
+                className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] max-h-[700px] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
+                onClick={e => e.stopPropagation()}
+            >
+                <header className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 id="prompt-library-title" className="text-xl font-bold text-slate-800 dark:text-white">Prompt Library</h2>
+                    <button onClick={onClose} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="Close modal">
+                        <XMarkIcon className="w-6 h-6" />
+                    </button>
+                </header>
+                
+                <div className="flex-grow flex overflow-hidden">
+                    {/* Category Sidebar */}
+                    <nav className="w-1/3 md:w-1/4 p-4 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+                        <ul className="space-y-1">
+                            {PROMPT_TEMPLATES.map(cat => (
+                                <li key={cat.category}>
+                                    <button 
+                                        onClick={() => setActiveCategory(cat.category)}
+                                        className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeCategory === cat.category 
+                                            ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300' 
+                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                        }`}
+                                    >
+                                        {cat.category}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+
+                    {/* Templates View */}
+                    <main className="flex-1 p-6 overflow-y-auto">
+                        <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4">{activeCategory}</h3>
+                        <div className="space-y-4">
+                            {selectedCategoryTemplates.map(template => (
+                                <div key={template.title} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-100">{template.title}</h4>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-3">{template.description}</p>
+                                    <pre className="bg-slate-100 dark:bg-slate-900/50 p-3 rounded-md text-xs font-mono text-slate-600 dark:text-slate-300 whitespace-pre-wrap mb-4">
+                                        <code>{template.prompt}</code>
+                                    </pre>
+                                    <div className="text-right">
+                                        <button 
+                                            onClick={() => onSelectTemplate(template, activeCategory)}
+                                            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-800"
+                                        >
+                                            Use Template
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default PromptLibraryModal;
