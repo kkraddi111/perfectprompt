@@ -32,6 +32,12 @@ const getModelSpecificInstructions = (model: string): string => {
             return `Pay special attention to structuring the prompt with clear headings (e.g., ## Context, ## Task) and step-by-step instructions, as this works well for GPT-4o.`;
         case 'Claude 3 Sonnet':
             return `Enclose key instructions, examples, or context within XML tags (e.g., <instructions></instructions>, <example></example>), as this is a known best practice for Claude 3 models.`;
+        case 'Cursor':
+            return `Cursor is an AI code editor. Prompts should be action-oriented for code generation or modification. Advise the AI to be explicit about file context, language, and the exact changes needed. Using diff formats or specifying function signatures can be effective.`;
+        case 'Lovable':
+            return `Lovable is a user research AI. Prompts should focus on tasks like generating user interview questions, summarizing feedback, or creating user personas. Instruct the AI to maintain a neutral, inquisitive tone and to structure outputs clearly for analysis.`;
+        case 'Bolt':
+            return `Bolt is an AI tool for search and content creation. Optimize prompts for clarity and conciseness. Suggest specifying the desired output format (e.g., 'as a bulleted list', 'in a markdown table') and the target audience for the content.`;
         case 'Default (Gemini)':
         default:
             return '';
