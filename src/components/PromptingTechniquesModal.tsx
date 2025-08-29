@@ -1,7 +1,7 @@
 import React from 'react';
-import { FOUNDATIONAL_TECHNIQUES, ADVANCED_TECHNIQUES } from '../techniques';
-import Modal from './ui/Modal';
-import type { PromptingTechnique } from '../types';
+import { FOUNDATIONAL_TECHNIQUES, ADVANCED_TECHNIQUES } from '@/techniques';
+import Modal from '@/components/ui/Modal';
+import type { PromptingTechnique } from '@/types';
 
 interface PromptingTechniquesModalProps {
     isOpen: boolean;
@@ -35,7 +35,7 @@ const PromptingTechniquesModal: React.FC<PromptingTechniquesModalProps> = ({ isO
             isOpen={isOpen}
             onClose={onClose}
             title="Prompting Techniques"
-            className="w-full max-w-3xl h-[80vh] max-h-[700px]"
+            className="w-full max-w-3xl h-[90vh] md:h-[80vh] max-h-[700px]"
         >
             <main className="flex-1 p-6 overflow-y-auto">
                  <div className="space-y-10">

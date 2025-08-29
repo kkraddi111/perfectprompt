@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES, SUPPORTED_MODELS } from '../constants';
-import { getEnhancementSuggestions, applyEnhancements } from '../services/geminiService';
-import type { EnhancedPromptResponse, Suggestion } from '../types';
+import { PROMPT_CATEGORIES, SUPPORTED_MODELS } from '@/constants';
+import { getEnhancementSuggestions, applyEnhancements } from '@/services/geminiService';
+import type { EnhancedPromptResponse, Suggestion } from '@/types';
 
-import Card from './ui/Card';
-import PromptForm from './PromptForm';
-import SuggestionsView from './SuggestionsView';
-import PromptResultView from './PromptResultView';
+import Card from '@/components/ui/Card';
+import PromptForm from '@/components/PromptForm';
+import SuggestionsView from '@/components/SuggestionsView';
+import PromptResultView from '@/components/PromptResultView';
 
 interface PromptEditorProps {
     onNewEnhancedPrompt: (originalPrompt: string, category: string, model: string, response: EnhancedPromptResponse) => void;
@@ -15,11 +15,12 @@ interface PromptEditorProps {
     onClear: () => void;
 }
 
-// Defines the steps of the prompt enhancement workflow.
-// - 'form': The user is editing the initial prompt and settings.
-// - 'suggesting': Waiting for the API to return enhancement suggestions.
-// - 'reviewing': The user is reviewing suggestions and can select which ones to apply.
-// - 'applying': Waiting for the API to apply the selected changes and return the final prompt.
+// This component manages the main user workflow as a state machine:
+// 'form': The user is editing their initial prompt.
+// 'suggesting': Loading state while waiting for suggestions from the AI.
+// 'reviewing': The user is reviewing the AI-generated suggestions and can select which ones to apply.
+// 'applying': Loading state while the AI applies the selected changes to generate the final prompt.
+// The final result is then passed up to the App component, which causes this component to re-render and display the PromptResultView.
 type EnhancementStep = 'form' | 'suggesting' | 'reviewing' | 'applying';
 
 const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, activePrompt, enhancedResult, onClear }) => {
@@ -32,6 +33,8 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
     const [selectedChanges, setSelectedChanges] = useState<string[]>([]);
 
     useEffect(() => {
+        // This effect synchronizes the editor's state with the main app state (activePrompt).
+        // It populates the form when a history item/template is loaded, and clears it when starting new.
         if (activePrompt) {
             setPrompt(activePrompt.originalPrompt);
             setCategory(activePrompt.category);
@@ -42,12 +45,15 @@ const PromptEditor: React.FC<PromptEditorProps> = ({ onNewEnhancedPrompt, active
             setModel(SUPPORTED_MODELS[0]);
         }
         
-        // When props change (e.g., loading history or clearing), reset the view state
-        setError(null);
-        setEnhancementStep('form');
-        setSuggestions([]);
-        setSelectedChanges([]);
-    }, [activePrompt]);
+        // This block resets the enhancement workflow (suggestions, review step, etc.)
+        // whenever there isn't a final result being displayed (e.g., when starting new or selecting a template).
+        if (!enhancedResult) {
+            setError(null);
+            setEnhancementStep('form');
+            setSuggestions([]);
+            setSelectedChanges([]);
+        }
+    }, [activePrompt, enhancedResult]);
 
     const handleGetSuggestions = async (currentPrompt: string, currentCategory: string, currentModel: string) => {
         if (!currentPrompt.trim() || enhancementStep !== 'form') return;

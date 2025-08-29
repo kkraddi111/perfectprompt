@@ -1,7 +1,7 @@
 import React from 'react';
-import type { Suggestion } from '../types';
-import CheckCircleIcon from './icons/CheckCircleIcon';
-import Button from './ui/Button';
+import type { Suggestion } from '@/types';
+import CheckCircleIcon from '@/components/icons/CheckCircleIcon';
+import Button from '@/components/ui/Button';
 
 interface SuggestionsViewProps {
     suggestions: Suggestion[];

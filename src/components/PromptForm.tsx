@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { PROMPT_CATEGORIES, SUPPORTED_MODELS } from '../constants';
-import Button from './ui/Button';
-import SparklesIcon from './icons/SparklesIcon';
+import { PROMPT_CATEGORIES, SUPPORTED_MODELS } from '@/constants';
+import Button from '@/components/ui/Button';
+import SparklesIcon from '@/components/icons/SparklesIcon';
 
 interface PromptFormProps {
     initialPrompt: string;
