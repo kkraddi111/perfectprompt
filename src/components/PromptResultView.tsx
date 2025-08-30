@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import type { EnhancedPromptResponse } from '@/types';
-import { usePromptTester } from '@/hooks/usePromptTester';
+import type { EnhancedPromptResponse } from '../types';
+import { usePromptTester } from '../hooks/usePromptTester';
 
-import Button from '@/components/ui/Button';
-import ClipboardIcon from '@/components/icons/ClipboardIcon';
-import PlayIcon from '@/components/icons/PlayIcon';
-import CheckCircleIcon from '@/components/icons/CheckCircleIcon';
-import TestResultView from '@/components/ui/TestResultView';
-
+import Button from './ui/Button';
+import ClipboardIcon from './icons/ClipboardIcon';
+import PlayIcon from './icons/PlayIcon';
+import CheckCircleIcon from './icons/CheckCircleIcon';
+import TestResultView from './ui/TestResultView';
 
 interface PromptResultViewProps {
     originalPrompt: string;
@@ -19,19 +18,22 @@ const PromptResultView: React.FC<PromptResultViewProps> = ({ originalPrompt, enh
         isTesting,
         testResult,
         testError,
-        handleTestPrompt,
-        handleCloseTest,
-    } = usePromptTester(enhancedResult.enhancedPrompt);
-
+        testPrompt,
+        closeTest,
+        showTestSection
+    } = usePromptTester();
+    
     const [copied, setCopied] = useState(false);
 
+    const handleTestPrompt = () => {
+        testPrompt(enhancedResult.enhancedPrompt);
+    };
+    
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
-    
-    const showTestSection = isTesting || testResult || testError;
 
     return (
         <div className="animate-fade-in space-y-6">
@@ -79,7 +81,7 @@ const PromptResultView: React.FC<PromptResultViewProps> = ({ originalPrompt, enh
                     isLoading={isTesting}
                     result={testResult}
                     error={testError}
-                    onClose={handleCloseTest}
+                    onClose={closeTest}
                 />
             )}
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
-import type { PromptHistoryItem } from '@/types';
-import TrashIcon from '@/components/icons/TrashIcon';
-import Card from '@/components/ui/Card';
+import type { PromptHistoryItem } from '../types';
+import TrashIcon from './icons/TrashIcon';
+import Card from './ui/Card';
 
 interface HistoryPanelProps {
     history: PromptHistoryItem[];

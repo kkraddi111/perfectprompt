@@ -1,5 +1,5 @@
 import React from 'react';
-import Spinner from '@/components/ui/Spinner';
+import Spinner from './Spinner';
 
 interface TestResultViewProps {
     isLoading: boolean;

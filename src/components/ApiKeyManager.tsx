@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
+import Button from './ui/Button';
 
 interface ApiKeyManagerProps {
     apiKey: string | null;
@@ -56,7 +56,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ apiKey, onSetApiKey, onRe
                             </a>.
                         </p>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex items-center gap-3">
                         <input
                             type="password"
                             value={inputValue}
@@ -68,11 +68,11 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ apiKey, onSetApiKey, onRe
                             className="flex-grow w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm p-2.5 focus:ring-primary-500 focus:border-primary-500"
                             aria-label="Gemini API Key Input"
                         />
-                         <Button onClick={handleSave} disabled={!inputValue.trim()} className="w-full sm:w-auto flex-shrink-0">
+                         <Button onClick={handleSave} disabled={!inputValue.trim()}>
                             Save Key
                         </Button>
                     </div>
-                    {error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{error}</p>}
+                    {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
                 </div>
             )}
         </div>

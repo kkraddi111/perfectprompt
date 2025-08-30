@@ -1,9 +1,9 @@
 import React from 'react';
-import ThemeToggle from '@/components/ThemeToggle';
-import SparklesIcon from '@/components/icons/SparklesIcon';
-import BookOpenIcon from '@/components/icons/BookOpenIcon';
-import LightBulbIcon from '@/components/icons/LightBulbIcon';
-import CogIcon from '@/components/icons/CogIcon';
+import ThemeToggle from './ThemeToggle';
+import SparklesIcon from './icons/SparklesIcon';
+import BookOpenIcon from './icons/BookOpenIcon';
+import LightBulbIcon from './icons/LightBulbIcon';
+import CogIcon from './icons/CogIcon';
 
 interface HeaderProps {
     theme: 'light' | 'dark';
@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({ theme, setTheme, onOpenLibrary, onOpenT
                             aria-label="Learn prompting techniques"
                         >
                             <LightBulbIcon className="w-5 h-5" />
-                            <span className="hidden md:inline">Learn Techniques</span>
+                            Learn Techniques
                         </button>
                          <button
                             onClick={onOpenLibrary}
@@ -39,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ theme, setTheme, onOpenLibrary, onOpenT
                             aria-label="Open prompt library"
                         >
                             <BookOpenIcon className="w-5 h-5" />
-                            <span className="hidden md:inline">Templates</span>
+                            Templates
                         </button>
                         <button
                             onClick={onOpenSettings}

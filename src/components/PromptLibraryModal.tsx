@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { PROMPT_TEMPLATES } from '@/templates';
-import type { PromptTemplate } from '@/types';
-import Modal from '@/components/ui/Modal';
+import { PROMPT_TEMPLATES } from '../templates';
+import type { PromptTemplate } from '../types';
+import Modal from './ui/Modal';
 
 interface PromptLibraryModalProps {
     isOpen: boolean;
@@ -19,11 +19,11 @@ const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({ isOpen, onClose
             isOpen={isOpen}
             onClose={onClose}
             title="Prompt Library"
-            className="w-full max-w-4xl h-[90vh] md:h-[80vh] max-h-[700px]"
+            className="w-full max-w-4xl h-[80vh] max-h-[700px]"
         >
-            <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
+            <div className="flex-grow flex overflow-hidden">
                 {/* Category Sidebar */}
-                <nav className="w-full md:w-1/4 p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700 overflow-y-auto flex-shrink-0">
+                <nav className="w-1/3 md:w-1/4 p-4 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
                     <ul className="space-y-1">
                         {PROMPT_TEMPLATES.map(cat => (
                             <li key={cat.category}>

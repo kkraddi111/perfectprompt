@@ -1,6 +1,6 @@
 import React from 'react';
-import Modal from '@/components/ui/Modal';
-import ApiKeyManager from '@/components/ApiKeyManager';
+import Modal from './ui/Modal';
+import ApiKeyManager from './ApiKeyManager';
 
 interface SettingsModalProps {
     isOpen: boolean;

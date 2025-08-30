@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Header from '@/components/Header';
-import PromptEditor from '@/components/PromptEditor';
-import HistoryPanel from '@/components/HistoryPanel';
-import PromptLibraryModal from '@/components/PromptLibraryModal';
-import PromptingTechniquesModal from '@/components/PromptingTechniquesModal';
-import SettingsModal from '@/components/SettingsModal';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { initializeGeminiClient } from '@/services/geminiService';
-import type { PromptHistoryItem, EnhancedPromptResponse, PromptTemplate } from '@/types';
+import Header from './components/Header';
+import PromptEditor from './components/PromptEditor';
+import HistoryPanel from './components/HistoryPanel';
+import PromptLibraryModal from './components/PromptLibraryModal';
+import PromptingTechniquesModal from './components/PromptingTechniquesModal';
+import SettingsModal from './components/SettingsModal';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { initializeGeminiClient } from './services/geminiService';
+import type { PromptHistoryItem, EnhancedPromptResponse, PromptTemplate } from './types';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
