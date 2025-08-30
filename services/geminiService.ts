@@ -28,7 +28,7 @@ const _handleJsonApiCall = async <T>(request: GenerateContentParameters, caller:
     
     try {
         const result = await ai.models.generateContent(request);
-        const jsonString = result.text?.trim() ?? "";
+        const jsonString = result.text.trim();
         if (!jsonString.startsWith('{') && !jsonString.startsWith('[')) {
             throw new Error("API did not return a valid JSON object.");
         }
@@ -49,7 +49,7 @@ const _handleTextApiCall = async (request: GenerateContentParameters, caller: st
 
     try {
         const result = await ai.models.generateContent(request);
-        return result.text ?? "";
+        return result.text!;
     } catch (error) {
         console.error(`Error in ${caller}:`, error);
         if (error instanceof Error) {
