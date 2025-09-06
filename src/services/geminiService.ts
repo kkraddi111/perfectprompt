@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { EnhancedPromptResponse, Suggestion } from '../types';
 
+// Force deployment trigger
+
 let ai: GoogleGenerativeAI | null = null;
 
 export function initializeGeminiClient(apiKey: string | null) {
