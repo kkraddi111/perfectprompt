@@ -33,7 +33,7 @@ const _handleJsonApiCall = async <T>(prompt: string, generationConfig: any, call
         });
 
         const result = await model.generateContent(prompt);
-        const response = await result.response;
+        const response = result.response;
         const text = response.text();
 
         if (typeof text !== 'string' || !text.trim()) {
@@ -65,7 +65,7 @@ const _handleTextApiCall = async (prompt: string, generationConfig: any, caller:
         });
 
         const result = await model.generateContent(prompt);
-        const response = await result.response;
+        const response = result.response;
         const text = response.text();
 
         if (typeof text !== 'string' || !text.trim()) {
