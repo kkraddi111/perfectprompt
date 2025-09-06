@@ -4,16 +4,16 @@ import type { EnhancedPromptResponse, Suggestion } from '../types';
 let ai: GoogleGenAI | null = null;
 
 export function initializeGeminiClient(apiKey: string | null) {
-  if (apiKey) {
-    try {
-      ai = new GoogleGenAI({ apiKey });
-    } catch (error) {
-      console.error("Failed to initialize GoogleGenAI:", error);
-      ai = null;
+    if (apiKey) {
+        try {
+            ai = new GoogleGenAI({ apiKey });
+        } catch (error) {
+            console.error("Failed to initialize GoogleGenAI:", error);
+            ai = null;
+        }
+    } else {
+        ai = null;
     }
-  } else {
-    ai = null;
-  }
 }
 
 const MISSING_KEY_ERROR = "Gemini API key is not configured. Please add it in the Settings menu (⚙️).";
@@ -25,10 +25,14 @@ const MISSING_KEY_ERROR = "Gemini API key is not configured. Please add it in th
  */
 const _handleJsonApiCall = async <T>(request: GenerateContentParameters, caller: string): Promise<T> => {
     if (!ai) throw new Error(MISSING_KEY_ERROR);
-    
+
     try {
         const result = await ai.models.generateContent(request);
-        const jsonString = result.text.trim();
+        const text = result.text;
+        if (!text) {
+            throw new Error("API returned empty response.");
+        }
+        const jsonString = text.trim();
         if (!jsonString.startsWith('{') && !jsonString.startsWith('[')) {
             throw new Error("API did not return a valid JSON object.");
         }
@@ -49,7 +53,11 @@ const _handleTextApiCall = async (request: GenerateContentParameters, caller: st
 
     try {
         const result = await ai.models.generateContent(request);
-        return result.text;
+        const text = result.text;
+        if (!text) {
+            throw new Error("API returned empty response.");
+        }
+        return text;
     } catch (error) {
         console.error(`Error in ${caller}:`, error);
         if (error instanceof Error) {
@@ -147,10 +155,10 @@ ${originalPrompt}
 Focus on proven techniques. Each suggestion must be concise and actionable.
 
 Return ONLY the raw JSON object.`;
-    
+
     const request = createApiRequest(contents, suggestionsSchema, 0.5);
     const response = await _handleJsonApiCall<{ suggestions: Suggestion[] }>(request, "get suggestions");
-    
+
     if (!Array.isArray(response.suggestions)) {
         throw new Error("Invalid JSON structure received for suggestions.");
     }
@@ -181,7 +189,7 @@ Return ONLY the raw JSON object.`;
 
     const request = createApiRequest(contents, enhancementSchema, 0.4);
     const response = await _handleJsonApiCall<EnhancedPromptResponse>(request, "apply enhancements");
-    
+
     if (!response.enhancedPrompt || !Array.isArray(response.changes)) {
         throw new Error("Invalid JSON structure received from API.");
     }
