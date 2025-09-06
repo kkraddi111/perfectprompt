@@ -1,12 +1,12 @@
-import { GoogleGenAI, Type, GenerateContentParameters } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { EnhancedPromptResponse, Suggestion } from '../types';
 
-let ai: GoogleGenAI | null = null;
+let ai: GoogleGenerativeAI | null = null;
 
 export function initializeGeminiClient(apiKey: string | null) {
     if (apiKey) {
         try {
-            ai = new GoogleGenAI({ apiKey });
+            ai = new GoogleGenerativeAI(apiKey);
         } catch (error) {
             console.error("Failed to initialize GoogleGenAI:", error);
             ai = null;
@@ -23,14 +23,21 @@ const MISSING_KEY_ERROR = "Gemini API key is not configured. Please add it in th
  * It handles the API call, error logging, and JSON parsing.
  * @private
  */
-const _handleJsonApiCall = async <T>(request: GenerateContentParameters, caller: string): Promise<T> => {
+const _handleJsonApiCall = async <T>(prompt: string, generationConfig: any, caller: string): Promise<T> => {
     if (!ai) throw new Error(MISSING_KEY_ERROR);
 
     try {
-        const result = await ai.models.generateContent(request);
-        const text = result.text;
-        if (!text) {
-            throw new Error("API returned empty response.");
+        const model = ai.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        if (typeof text !== 'string' || !text.trim()) {
+            throw new Error("API returned empty or invalid response.");
         }
         const jsonString = text.trim();
         if (!jsonString.startsWith('{') && !jsonString.startsWith('[')) {
@@ -48,14 +55,21 @@ const _handleJsonApiCall = async <T>(request: GenerateContentParameters, caller:
  * It handles the API call and error logging.
  * @private
  */
-const _handleTextApiCall = async (request: GenerateContentParameters, caller: string): Promise<string> => {
+const _handleTextApiCall = async (prompt: string, generationConfig: any, caller: string): Promise<string> => {
     if (!ai) throw new Error(MISSING_KEY_ERROR);
 
     try {
-        const result = await ai.models.generateContent(request);
-        const text = result.text;
-        if (!text) {
-            throw new Error("API returned empty response.");
+        const model = ai.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        if (typeof text !== 'string' || !text.trim()) {
+            throw new Error("API returned empty or invalid response.");
         }
         return text;
     } catch (error) {
@@ -69,20 +83,20 @@ const _handleTextApiCall = async (request: GenerateContentParameters, caller: st
 
 
 const suggestionsSchema = {
-    type: Type.OBJECT,
+    type: "object",
     properties: {
         suggestions: {
-            type: Type.ARRAY,
+            type: "array",
             description: "A list of 3-5 high-impact, actionable suggestions to improve the prompt.",
             items: {
-                type: Type.OBJECT,
+                type: "object",
                 properties: {
                     technique: {
-                        type: Type.STRING,
+                        type: "string",
                         description: "The name of the prompting technique used. Must be one of: Role Prompting, Add Context, Few-Shot Prompting, Add Constraints, Specify Format, Chain-of-Thought."
                     },
                     suggestion: {
-                        type: Type.STRING,
+                        type: "string",
                         description: "The concise, actionable suggestion to improve the prompt."
                     }
                 },
@@ -94,16 +108,16 @@ const suggestionsSchema = {
 };
 
 const enhancementSchema = {
-    type: Type.OBJECT,
+    type: "object",
     properties: {
         enhancedPrompt: {
-            type: Type.STRING,
+            type: "string",
             description: "The improved, enhanced prompt, rewritten to be more effective based on the requested changes."
         },
         changes: {
-            type: Type.ARRAY,
+            type: "array",
             description: "A list of the actionable changes that were made to generate the enhanced prompt, derived from the user's selections.",
-            items: { type: Type.STRING }
+            items: { type: "string" }
         }
     },
     required: ['enhancedPrompt', 'changes']
@@ -121,14 +135,10 @@ const getModelSpecificInstructions = (model: string): string => {
     return MODEL_INSTRUCTIONS_MAP[model] || '';
 };
 
-const createApiRequest = (contents: string, responseSchema: object, temperature: number): GenerateContentParameters => ({
-    model: "gemini-2.5-flash",
-    contents,
-    config: {
-        responseMimeType: "application/json",
-        responseSchema,
-        temperature,
-    }
+const createGenerationConfig = (responseSchema: object, temperature: number) => ({
+    responseMimeType: "application/json",
+    responseSchema,
+    temperature,
 });
 
 export const getEnhancementSuggestions = async (originalPrompt: string, category: string, model: string): Promise<Suggestion[]> => {
@@ -156,8 +166,8 @@ Focus on proven techniques. Each suggestion must be concise and actionable.
 
 Return ONLY the raw JSON object.`;
 
-    const request = createApiRequest(contents, suggestionsSchema, 0.5);
-    const response = await _handleJsonApiCall<{ suggestions: Suggestion[] }>(request, "get suggestions");
+    const generationConfig = createGenerationConfig(suggestionsSchema, 0.5);
+    const response = await _handleJsonApiCall<{ suggestions: Suggestion[] }>(contents, generationConfig, "get suggestions");
 
     if (!Array.isArray(response.suggestions)) {
         throw new Error("Invalid JSON structure received for suggestions.");
@@ -187,8 +197,8 @@ Apply these exact changes:
 
 Return ONLY the raw JSON object.`;
 
-    const request = createApiRequest(contents, enhancementSchema, 0.4);
-    const response = await _handleJsonApiCall<EnhancedPromptResponse>(request, "apply enhancements");
+    const generationConfig = createGenerationConfig(enhancementSchema, 0.4);
+    const response = await _handleJsonApiCall<EnhancedPromptResponse>(contents, generationConfig, "apply enhancements");
 
     if (!response.enhancedPrompt || !Array.isArray(response.changes)) {
         throw new Error("Invalid JSON structure received from API.");
@@ -197,12 +207,6 @@ Return ONLY the raw JSON object.`;
 };
 
 export const generateTestResponse = async (prompt: string): Promise<string> => {
-    const request: GenerateContentParameters = {
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-            temperature: 0.7,
-        }
-    };
-    return _handleTextApiCall(request, "generate test response");
+    const generationConfig = { temperature: 0.7 };
+    return _handleTextApiCall(prompt, generationConfig, "generate test response");
 };
